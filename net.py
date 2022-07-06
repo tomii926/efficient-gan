@@ -97,36 +97,38 @@ class Discriminator(nn.Module):
 class Encoder(nn.Module):
 
     def __init__(self, z_dim=20):
-        super(Encoder, self).__init__()
-
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3,
-                      stride=1),
-            nn.LeakyReLU(0.1, inplace=True))
-        # 注意：白黒画像なので入力チャネルは1つだけ
-
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(32, 64, kernel_size=3,
-                      stride=2, padding=1),
+        super().__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(1, 64, 3, stride=1, padding=1),  # b, 64, 28, 28
             nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.1, inplace=True))
-
-        self.layer3 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3,
-                      stride=2, padding=1),
+            nn.LeakyReLU(),            
+            nn.MaxPool2d(2)  # b, 64, 14, 14
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(64, 128, 3, stride=1, padding=1),  # b, 128, 14, 14
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.1, inplace=True))
-
-        # ここまでで画像のサイズは7×7になっている
-        self.last = nn.Linear(128 * 7 * 7, z_dim)
+            nn.LeakyReLU(),           
+            nn.MaxPool2d(2)  # b, 128, 7, 7
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(128, 256, 3, stride=1, padding=1),  # b, 256, 7, 7
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(2),  # b, 256, 3, 3
+            nn.Dropout(0.2)
+        )
+        self.conv4 = nn.Sequential(
+            nn.Conv2d(256, 512, 3, stride=1, padding=0),  # b, 512, 1, 1
+            nn.BatchNorm2d(512),
+            nn.LeakyReLU(),
+        )
+        self.z = nn.Linear(512, z_dim)  # b, 512 ==> b, latent_dim
 
     def forward(self, x):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = self.layer3(out)
-
-        # FCに入れるためにテンソルの形を整形
-        out = out.view(-1, 128 * 7 * 7)
-        out = self.last(out)
-
-        return out
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.view(-1,512)
+        z = self.z(x)
+        return z
