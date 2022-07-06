@@ -127,3 +127,17 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# data folder
+data/*
+
+# trained net
+trained_net/*
+
+# generated images
+images/*
+
+# graphs
+graphs/*
+
+!.gitkeep
