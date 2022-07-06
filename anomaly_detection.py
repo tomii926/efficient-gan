@@ -1,11 +1,9 @@
-import os
 from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision.datasets import MNIST, FashionMNIST
 from torchvision.transforms import ToTensor
