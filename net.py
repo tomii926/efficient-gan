@@ -5,39 +5,40 @@ import torch.nn as nn
 class Generator(nn.Module):
 
     def __init__(self, z_dim=20):
-        super(Generator, self).__init__()
-
-        self.layer1 = nn.Sequential(
-            nn.Linear(z_dim, 1024),
-            nn.BatchNorm1d(1024),
-            nn.ReLU(inplace=True))
-
-        self.layer2 = nn.Sequential(
-            nn.Linear(1024, 7*7*128),
-            nn.BatchNorm1d(7*7*128),
-            nn.ReLU(inplace=True))
-
-        self.layer3 = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=128, out_channels=64,
-                               kernel_size=4, stride=2, padding=1),
+        super().__init__()
+        self.decoder = nn.Sequential(
+            nn.Linear(z_dim, 512),# b, latent_dim ==> b, 512
+            nn.BatchNorm1d(512),
+            nn.LeakyReLU(),
+        )
+        self.convTrans1 = nn.Sequential(
+            nn.ConvTranspose2d(512, 256, 3, stride=1, padding = 0),  # b, 256, 3, 3
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(),
+        )
+        self.convTrans2 = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, 3, stride=3, padding = 1),  # b, 128, 7, 7
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(),
+        )
+        self.convTrans3 = nn.Sequential(
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding = 1),  # b, 64, 14, 14
             nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True))
-
-        self.last = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=64, out_channels=1,
-                               kernel_size=4, stride=2, padding=1),
-            nn.Tanh())
-        # 注意：白黒画像なので出力チャネルは1つだけ
+            nn.LeakyReLU(),
+            nn.Dropout(0.2)
+        )
+        self.convTrans4 = nn.Sequential(
+            nn.ConvTranspose2d(64, 1, 4, stride=2, padding = 1),  # b, 3, 28, 28
+            nn.Tanh(),
+        )
 
     def forward(self, z):
-        out = self.layer1(z)
-        out = self.layer2(out)
-
-        # 転置畳み込み層に入れるためにテンソルの形を整形
-        out = out.view(z.shape[0], 128, 7, 7)
-        out = self.layer3(out)
-        out = self.last(out)
-
+        out = self.decoder(z)
+        out = out.view(-1,512,1,1)
+        out = self.convTrans1(out)
+        out = self.convTrans2(out)
+        out = self.convTrans3(out)
+        out = self.convTrans4(out)
         return out
 
 
