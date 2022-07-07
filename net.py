@@ -131,3 +131,10 @@ class Encoder(nn.Module):
         x = x.view(-1,512)
         z = self.z(x)
         return z
+
+
+if __name__ == "__main__":
+    from torchinfo import summary
+    summary(Generator(), (64, 20))
+    summary(Encoder(), (64, 1, 28, 28))
+    summary(Discriminator(), [(64, 1, 28, 28), (64, 20)])
