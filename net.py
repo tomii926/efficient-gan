@@ -7,35 +7,35 @@ class Generator(nn.Module):
     def __init__(self, z_dim=20):
         super().__init__()
         self.decoder = nn.Sequential(
-            nn.Linear(z_dim, 512),# b, latent_dim ==> b, 512
-            nn.BatchNorm1d(512),
-            nn.LeakyReLU(),
+            nn.Linear(z_dim, 1024),# b, latent_dim ==> b, 512
+            nn.BatchNorm1d(1024),
+            nn.ReLU(),
         )
-        self.convTrans1 = nn.Sequential(
-            nn.ConvTranspose2d(512, 256, 3, stride=1, padding = 0),  # b, 256, 3, 3
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(),
+        self.decoder2 = nn.Sequential(
+            nn.Linear(1024, 256 * 7 * 7),
+            nn.BatchNorm1d(256 * 7 * 7),
+            nn.ReLU(),
         )
         self.convTrans2 = nn.Sequential(
-            nn.ConvTranspose2d(256, 128, 3, stride=3, padding = 1),  # b, 128, 7, 7
+            nn.ConvTranspose2d(256, 128, 3, stride=1),  # b, 128, 9, 9
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(),
+            nn.ReLU(),
         )
         self.convTrans3 = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, 4, stride=2, padding = 1),  # b, 64, 14, 14
+            nn.ConvTranspose2d(128, 64, 3, stride=2, padding = 2),  # b, 64, 15, 15
             nn.BatchNorm2d(64),
-            nn.LeakyReLU(),
-            nn.Dropout(0.2)
+            nn.ReLU(),
         )
         self.convTrans4 = nn.Sequential(
-            nn.ConvTranspose2d(64, 1, 4, stride=2, padding = 1),  # b, 3, 28, 28
+            nn.ConvTranspose2d(64, 1, 4, stride=2, padding = 2),  # b, 3, 28, 28
             nn.Tanh(),
         )
 
     def forward(self, z):
         out = self.decoder(z)
-        out = out.view(-1,512,1,1)
-        out = self.convTrans1(out)
+        out = self.decoder2(out)
+        out = out.view(-1,256,7,7)
+        #out = self.convTrans1(out)
         out = self.convTrans2(out)
         out = self.convTrans3(out)
         out = self.convTrans4(out)
@@ -62,14 +62,13 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(256),
             nn.LeakyReLU(),
             nn.MaxPool2d(2),  # b, 256, 3, 3
-            nn.Dropout(0.2)
         )
 
         # z input
-        self.z_layer1 = nn.Linear(z_dim, 256)  # b, z_dim ==> b, 512
+        self.z_layer1 = nn.Linear(z_dim, 512)  # b, z_dim ==> b, 512
 
         self.last1 = nn.Sequential(
-            nn.Linear(256 * 3 * 3 + 256, 1024),
+            nn.Linear(256 * 3 * 3 + 512, 1024),
             nn.LeakyReLU(0.1, inplace=True),
         )
 
@@ -116,7 +115,6 @@ class Encoder(nn.Module):
             nn.BatchNorm2d(256),
             nn.LeakyReLU(),
             nn.MaxPool2d(2),  # b, 256, 3, 3
-            nn.Dropout(0.2)
         )
         self.conv4 = nn.Sequential(
             nn.Conv2d(256, 512, 3, stride=1, padding=0),  # b, 512, 1, 1

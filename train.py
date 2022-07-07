@@ -69,15 +69,15 @@ criterion = nn.BCEWithLogitsLoss(reduction='mean')
 
 z_dim = 20
 
-G.train()
-E.train()
-D.train()
-
 torch.backends.cudnn.benchmark = True
 
 fixed_z = torch.randn((64, 20)).to(device)
 
 for epoch in range(1000):
+    G.train()
+    E.train()
+    D.train()
+
     epoch_g_loss = []
     epoch_e_loss = []
     epoch_d_loss = []
@@ -136,7 +136,8 @@ for epoch in range(1000):
             epoch, np.mean(epoch_d_loss), np.mean(epoch_g_loss), np.mean(epoch_e_loss)))
 
     with torch.no_grad():
-        save_image(G(fixed_z), f'images/image_epoch_{epoch}.png', pad_value=1)
+        G.eval()
+        save_image(G(fixed_z), f'images/_image_epoch_{epoch}.png', pad_value=1, value_range=(-1, 1))
 
     # do checkpointing
     torch.save(D.state_dict(), 'trained_net/netD_epoch_%d.pth' % (epoch))
