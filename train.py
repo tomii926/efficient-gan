@@ -28,20 +28,15 @@ dataset = datasets.MNIST('data', train=True, transform=data_transform, download=
 
 dataloader = data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
-
-# ネットワークの初期化
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        # conv2dとConvTranspose2dの初期化
         nn.init.normal_(m.weight.data, 0.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
     elif classname.find('BatchNorm') != -1:
-        # BatchNorm2dの初期化
         nn.init.normal_(m.weight.data, 0.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
     elif classname.find('Linear') != -1:
-        # 全結合層Linearの初期化
         m.bias.data.fill_(0)
 
 
@@ -52,7 +47,6 @@ G.to(device)
 E.to(device)
 D.to(device)
 
-# 初期化の実施
 G.apply(weights_init)
 E.apply(weights_init)
 D.apply(weights_init)
@@ -117,8 +111,7 @@ for epoch in range(1000):
         g_loss.backward()
         g_optimizer.step()
 
-
-        ### Encoderの学習 ###
+        ### Encoder ###
         z_out_real = E(images)
         d_out_real, _ = D(images, z_out_real)
 
