@@ -130,7 +130,7 @@ for epoch in range(1000):
 
     with torch.no_grad():
         G.eval()
-        save_image(G(fixed_z), f'images/_image_epoch_{epoch}.png', pad_value=1, value_range=(-1, 1))
+        save_image(G(fixed_z), f'images/image_epoch_{epoch}.png', pad_value=1, value_range=(-1, 1))
 
     # do checkpointing
     torch.save(D.state_dict(), 'trained_net/netD_epoch_%d.pth' % (epoch))
