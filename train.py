@@ -62,6 +62,8 @@ z_dim = 20
 torch.backends.cudnn.benchmark = True
 
 fixed_z = torch.randn((64, 20)).to(device)
+fixed_real_images, _ = iter(dataloader).__next__()
+fixed_real_images = fixed_real_images.to(device)[:64]
 
 for epoch in range(1000):
     G.train()
@@ -126,9 +128,12 @@ for epoch in range(1000):
 
     with torch.no_grad():
         G.eval()
-        save_image(G(fixed_z), f'images/image_epoch_{epoch}.png', pad_value=1, value_range=(-1, 1), padding=1)
+        E.eval()
+        z_out_real = E(fixed_real_images)
+        reconst_images = G(z_out_real)
+        save_image(reconst_images, f'images/image_epoch_{epoch}_reconstructed.png', pad_value=1, value_range=(-1, 1), padding=1)
+        save_image(G(fixed_z), f'images/image_epoch_{epoch}_generated.png', pad_value=1, value_range=(-1, 1), padding=1)
 
-    # do checkpointing
     torch.save(D.state_dict(), 'trained_net/netD_epoch_%d.pth' % (epoch))
     torch.save(G.state_dict(), 'trained_net/netG_epoch_%d.pth' % (epoch))
     torch.save(E.state_dict(), 'trained_net/netE_epoch_%d.pth' % (epoch))
