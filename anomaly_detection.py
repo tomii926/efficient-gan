@@ -5,11 +5,10 @@ import torch
 from sklearn.metrics import roc_curve
 from torch.utils.data import DataLoader
 from torchvision.datasets import KMNIST, MNIST, FashionMNIST
-from torchvision.transforms import ToTensor
 from torchvision.utils import save_image
 from tqdm import tqdm
 
-from dataset import NoisyMNIST, OccludedMNIST
+from dataset import NoisyMNIST, OccludedMNIST, data_transform
 from net import Discriminator, Encoder, Generator
 
 
@@ -32,7 +31,7 @@ def anomaly_score(x, fake_img, z_out_real, D, Lambda=0.1):
 
 
 def plot_roc_curve(anomaly_dataset, file_name):
-    testset = MNIST('./data', train=False, download=True, transform=ToTensor())
+    testset = MNIST('./data', train=False, download=True, transform=data_transform)
     testloader = DataLoader(testset, batch_size=256, shuffle=False, num_workers=2)
     anomaly_dataloader = DataLoader(anomaly_dataset, batch_size=256, shuffle=False, num_workers=2)
     a_scores_seq = []
@@ -41,11 +40,11 @@ def plot_roc_curve(anomaly_dataset, file_name):
         for images, _ in tqdm(testloader, desc=testset.__class__.__name__):
             images = images.to(device)
             z_out_real = E(images)
-            print(z_out_real)
+            # print(z_out_real)
             images_reconst = G(z_out_real)
             if first:
-                save_image(images[:64], f"graphs/original_mnist.png")
-                save_image(images_reconst[:64], f"graphs/reconst_mnist.png")
+                save_image(images[:64], f"graphs/original_mnist.png", pad_value=1, value_range=(-1, 1), padding=1)
+                save_image(images_reconst[:64], f"graphs/reconst_mnist.png",  pad_value=1, value_range=(-1, 1), padding=1)
                 first = False
             a_scores = anomaly_score(images, images_reconst, z_out_real, D)
             a_scores_seq += a_scores.tolist()
@@ -56,8 +55,8 @@ def plot_roc_curve(anomaly_dataset, file_name):
             z_out_real = E(images)
             images_reconst = G(z_out_real)
             if first:
-                save_image(images[:64], f"graphs/original_{file_name}")
-                save_image(images_reconst[:64], f"graphs/reconst_{file_name}")
+                save_image(images[:64], f"graphs/original_{file_name}",  pad_value=1, value_range=(-1, 1), padding=1)
+                save_image(images_reconst[:64], f"graphs/reconst_{file_name}",  pad_value=1, value_range=(-1, 1), padding=1)
                 first = False
             a_scores = anomaly_score(images, images_reconst, z_out_real, D)
             a_scores_seq += a_scores.tolist()
@@ -95,10 +94,10 @@ if __name__ == "__main__":
     G.load_state_dict(torch.load(f'./trained_net/netG_epoch_{epoch}.pth'))
     E.load_state_dict(torch.load(f'./trained_net/netE_epoch_{epoch}.pth'))
 
-    fashionset = FashionMNIST('./data', train=False, download=True, transform=ToTensor())
-    kset = KMNIST('./data', train=False, download=True, transform=ToTensor())
-    noisyset = NoisyMNIST('./data', train=False, download=True, transform=ToTensor())
-    occludedset = OccludedMNIST('./data', train=False, download=True, transform=ToTensor())
+    fashionset = FashionMNIST('./data', train=False, download=True, transform=data_transform)
+    kset = KMNIST('./data', train=False, download=True, transform=data_transform)
+    noisyset = NoisyMNIST('./data', train=False, download=True, transform=data_transform)
+    occludedset = OccludedMNIST('./data', train=False, download=True, transform=data_transform)
 
     plot_roc_curve(fashionset, "fashion.png")
     plot_roc_curve(kset, "kuzushiji.png")

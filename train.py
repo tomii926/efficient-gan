@@ -4,10 +4,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as data
-from torchvision import datasets, transforms
+from torchvision import datasets
 from torchvision.utils import save_image
 from tqdm import tqdm
 
+from dataset import data_transform
 from net import Discriminator, Encoder, Generator
 
 torch.manual_seed(1234)
@@ -18,11 +19,6 @@ random.seed(1234)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 batch_size=256
-
-data_transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(0.5, 0.5)
-])
 
 dataset = datasets.MNIST('data', train=True, transform=data_transform, download=True)
 
@@ -130,7 +126,7 @@ for epoch in range(1000):
 
     with torch.no_grad():
         G.eval()
-        save_image(G(fixed_z), f'images/image_epoch_{epoch}.png', pad_value=1, value_range=(-1, 1))
+        save_image(G(fixed_z), f'images/image_epoch_{epoch}.png', pad_value=1, value_range=(-1, 1), padding=1)
 
     # do checkpointing
     torch.save(D.state_dict(), 'trained_net/netD_epoch_%d.pth' % (epoch))

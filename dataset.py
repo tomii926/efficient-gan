@@ -36,6 +36,12 @@ class NoisyMNIST(Dataset):
         return image, _
 
 
+data_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(0.5, 0.5)
+])
+
+
 if __name__ == "__main__":
     o = OccludedMNIST('./data', train=False, transform=transforms.ToTensor(), download=True)
     n = NoisyMNIST('./data', train=False, transform=transforms.ToTensor(), download=True)
