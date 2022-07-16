@@ -6,6 +6,7 @@ from sklearn.metrics import roc_curve
 from torch.utils.data import DataLoader
 from torchvision.datasets import KMNIST, MNIST, FashionMNIST
 from torchvision.transforms import ToTensor
+from torchvision.utils import save_image
 from tqdm import tqdm
 
 from dataset import NoisyMNIST, OccludedMNIST
@@ -36,17 +37,28 @@ def plot_roc_curve(anomaly_dataset, file_name):
     anomaly_dataloader = DataLoader(anomaly_dataset, batch_size=256, shuffle=False, num_workers=2)
     a_scores_seq = []
     with torch.no_grad():
+        first=True
         for images, _ in tqdm(testloader, desc=testset.__class__.__name__):
             images = images.to(device)
             z_out_real = E(images)
+            print(z_out_real)
             images_reconst = G(z_out_real)
+            if first:
+                save_image(images[:64], f"graphs/original_mnist.png")
+                save_image(images_reconst[:64], f"graphs/reconst_mnist.png")
+                first = False
             a_scores = anomaly_score(images, images_reconst, z_out_real, D)
             a_scores_seq += a_scores.tolist()
-
+        
+        first = True
         for images, _ in tqdm(anomaly_dataloader, desc=anomaly_dataset.__class__.__name__):
             images = images.to(device)
             z_out_real = E(images)
             images_reconst = G(z_out_real)
+            if first:
+                save_image(images[:64], f"graphs/original_{file_name}")
+                save_image(images_reconst[:64], f"graphs/reconst_{file_name}")
+                first = False
             a_scores = anomaly_score(images, images_reconst, z_out_real, D)
             a_scores_seq += a_scores.tolist()
 
@@ -90,5 +102,5 @@ if __name__ == "__main__":
 
     plot_roc_curve(fashionset, "fashion.png")
     plot_roc_curve(kset, "kuzushiji.png")
-    plot_roc_curve(noisyset, "noisy")
-    plot_roc_curve(occludedset, "occluded")
+    plot_roc_curve(noisyset, "noisy.png")
+    plot_roc_curve(occludedset, "occluded.png")
