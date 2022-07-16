@@ -30,7 +30,7 @@ def anomaly_score(x, fake_img, z_out_real, D, Lambda=0.1):
     return loss_each
 
 
-def plot_roc_curve(anomaly_dataset, file_name):
+def plot_roc_curve(anomaly_dataset, file_name, E, G):
     testset = MNIST('./data', train=False, download=True, transform=data_transform)
     testloader = DataLoader(testset, batch_size=256, shuffle=False, num_workers=2)
     anomaly_dataloader = DataLoader(anomaly_dataset, batch_size=256, shuffle=False, num_workers=2)
@@ -40,7 +40,6 @@ def plot_roc_curve(anomaly_dataset, file_name):
         for images, _ in tqdm(testloader, desc=testset.__class__.__name__):
             images = images.to(device)
             z_out_real = E(images)
-            # print(z_out_real)
             images_reconst = G(z_out_real)
             if first:
                 save_image(images[:64], f"graphs/original_mnist.png", pad_value=1, value_range=(-1, 1), padding=1)
@@ -99,7 +98,7 @@ if __name__ == "__main__":
     noisyset = NoisyMNIST('./data', train=False, download=True, transform=data_transform)
     occludedset = OccludedMNIST('./data', train=False, download=True, transform=data_transform)
 
-    plot_roc_curve(fashionset, "fashion.png")
-    plot_roc_curve(kset, "kuzushiji.png")
-    plot_roc_curve(noisyset, "noisy.png")
-    plot_roc_curve(occludedset, "occluded.png")
+    plot_roc_curve(fashionset, "fashion.png", E, G)
+    plot_roc_curve(kset, "kuzushiji.png", E, G)
+    plot_roc_curve(noisyset, "noisy.png", E, G)
+    plot_roc_curve(occludedset, "occluded.png", E, G)
