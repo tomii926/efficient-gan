@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 import torch
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score, roc_curve
 from torch.utils.data import DataLoader
 from torchvision.datasets import KMNIST, MNIST, FashionMNIST
 from torchvision.utils import save_image
@@ -64,7 +64,8 @@ def plot_roc_curve(anomaly_dataset, file_name, E, G):
     plt.figure(figsize = (5,5))
     path = f'graphs/{file_name}'
     plt.plot(roc[0], roc[1])
-    plt.title(f"ROC curve")
+    auc_score = roc_auc_score([0] * len(testset) + [1] * len(anomaly_dataset), a_scores_seq)
+    plt.title(f"ROC curve (AUC {auc_score:.3f})")
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
     plt.grid()
