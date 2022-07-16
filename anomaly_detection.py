@@ -1,7 +1,6 @@
 from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 from sklearn.metrics import roc_curve
 from torch.utils.data import DataLoader
@@ -9,6 +8,7 @@ from torchvision.datasets import KMNIST, MNIST, FashionMNIST
 from torchvision.transforms import ToTensor
 from tqdm import tqdm
 
+from dataset import NoisyMNIST, OccludedMNIST
 from net import Discriminator, Encoder, Generator
 
 
@@ -28,6 +28,38 @@ def anomaly_score(x, fake_img, z_out_real, D, Lambda=0.1):
     loss_each = (1-Lambda)*residual_loss + Lambda*discrimination_loss
 
     return loss_each
+
+
+def plot_roc_curve(anomaly_dataset, file_name):
+    testset = MNIST('./data', train=False, download=True, transform=ToTensor())
+    testloader = DataLoader(testset, batch_size=256, shuffle=False, num_workers=2)
+    anomaly_dataloader = DataLoader(anomaly_dataset, batch_size=256, shuffle=False, num_workers=2)
+    a_scores_seq = []
+    with torch.no_grad():
+        for images, _ in tqdm(testloader, desc=testset.__class__.__name__):
+            images = images.to(device)
+            z_out_real = E(images)
+            images_reconst = G(z_out_real)
+            a_scores = anomaly_score(images, images_reconst, z_out_real, D)
+            a_scores_seq += a_scores.tolist()
+
+        for images, _ in tqdm(anomaly_dataloader, desc=anomaly_dataset.__class__.__name__):
+            images = images.to(device)
+            z_out_real = E(images)
+            images_reconst = G(z_out_real)
+            a_scores = anomaly_score(images, images_reconst, z_out_real, D)
+            a_scores_seq += a_scores.tolist()
+
+    roc = roc_curve([0] * len(testset) + [1] * len(anomaly_dataset), a_scores_seq)
+    plt.figure(figsize = (5,5))
+    path = f'graphs/{file_name}'
+    plt.plot(roc[0], roc[1])
+    plt.title(f"ROC curve")
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.grid()
+    plt.savefig(path, bbox_inches='tight')
+    print(f'Image saved {path}')
 
 
 if __name__ == "__main__":
@@ -51,40 +83,12 @@ if __name__ == "__main__":
     G.load_state_dict(torch.load(f'./trained_net/netG_epoch_{epoch}.pth'))
     E.load_state_dict(torch.load(f'./trained_net/netE_epoch_{epoch}.pth'))
 
-    testset = MNIST('./data', train=False, download=True, transform=ToTensor())
-    testloader = DataLoader(testset, batch_size=256, shuffle=False, num_workers=2)
-
     fashionset = FashionMNIST('./data', train=False, download=True, transform=ToTensor())
-    fashionloader = DataLoader(fashionset, batch_size=256, shuffle=False, num_workers=2)
-
     kset = KMNIST('./data', train=False, download=True, transform=ToTensor())
-    kloader = DataLoader(kset, batch_size=256, shuffle=False, num_workers=2)
+    noisyset = NoisyMNIST('./data', train=False, download=True, transform=ToTensor())
+    occludedset = OccludedMNIST('./data', train=False, download=True, transform=ToTensor())
 
-    a_scores_seq = []
-    
-    with torch.no_grad():
-        for images, labels in tqdm(testloader, desc='MNIST'):
-            images = images.to(device)
-            z_out_real = E(images)
-            images_reconst = G(z_out_real)
-            a_scores = anomaly_score(images, images_reconst, z_out_real, D)
-            a_scores_seq += a_scores.tolist()
-
-        for images, _ in tqdm(fashionloader, desc='calculating positive rate of Fashion-MNIST'):
-            images = images.to(device)
-            z_out_real = E(images)
-            images_reconst = G(z_out_real)
-            a_scores = anomaly_score(images, images_reconst, z_out_real, D)
-            a_scores_seq += a_scores.tolist()
-
-    roc = roc_curve([0] * len(testset) + [1] * len(fashionset), a_scores_seq)
-    plt.figure(figsize = (5,5))
-    path = f'graphs/epoch{args.nepoch:4d}.png'
-    plt.plot(roc[0], roc[1])
-    plt.title(f"ROC curve")
-    plt.ylabel('True Positive Rate')
-    plt.xlabel('False Positive Rate')
-    plt.grid()
-    plt.savefig(path, bbox_inches='tight')
-    print(f'Image saved {path}')
-    
+    plot_roc_curve(fashionset, "fashion.png")
+    plot_roc_curve(kset, "kuzushiji.png")
+    plot_roc_curve(noisyset, "noisy")
+    plot_roc_curve(occludedset, "occluded")
