@@ -30,24 +30,10 @@ def anomaly_score(x, fake_img, z_out_real, D, Lambda):
     return loss_each
 
 
-def plot_roc_curve(anomaly_dataset, file_name, E, G, Lambda):
-    testset = MNIST('./data', train=False, download=True, transform=data_transform)
-    testloader = DataLoader(testset, batch_size=256, shuffle=False, num_workers=2)
+def plot_roc_curve(anomaly_dataset, file_name, mnist_anomaly_scores, E, G, Lambda):    
     anomaly_dataloader = DataLoader(anomaly_dataset, batch_size=256, shuffle=False, num_workers=2)
-    a_scores_seq = []
+    a_scores_seq = mnist_anomaly_scores.copy()
     with torch.no_grad():
-        first=True
-        for images, _ in tqdm(testloader, desc=testset.__class__.__name__):
-            images = images.to(device)
-            z_out_real = E(images)
-            images_reconst = G(z_out_real)
-            if first:
-                save_image(images[:64], f"graphs/original_mnist.png", pad_value=1, value_range=(-1, 1), padding=1)
-                save_image(images_reconst[:64], f"graphs/reconst_mnist.png",  pad_value=1, value_range=(-1, 1), padding=1)
-                first = False
-            a_scores = anomaly_score(images, images_reconst, z_out_real, D, Lambda)
-            a_scores_seq += a_scores.tolist()
-        
         first = True
         for images, _ in tqdm(anomaly_dataloader, desc=anomaly_dataset.__class__.__name__):
             images = images.to(device)
@@ -61,11 +47,11 @@ def plot_roc_curve(anomaly_dataset, file_name, E, G, Lambda):
             a_scores_seq += a_scores.tolist()
 
     roc = roc_curve([0] * len(testset) + [1] * len(anomaly_dataset), a_scores_seq)
-    plt.figure(figsize = (5,5))
+    plt.figure(figsize = (3,3))
     path = f'graphs/Lambda={Lambda:.2f}_{file_name}'
     plt.plot(roc[0], roc[1])
     auc_score = roc_auc_score([0] * len(testset) + [1] * len(anomaly_dataset), a_scores_seq)
-    plt.title(f"ROC curve (AUC {auc_score:.3f})")
+    plt.title(f"{anomaly_dataset.__class__.__name__} (AUC {auc_score:.3f})")
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
     plt.grid()
@@ -95,12 +81,28 @@ if __name__ == "__main__":
     G.load_state_dict(torch.load(f'./trained_net/netG_epoch_{epoch}.pth'))
     E.load_state_dict(torch.load(f'./trained_net/netE_epoch_{epoch}.pth'))
 
+    testset = MNIST('./data', train=False, download=True, transform=data_transform)
+    testloader = DataLoader(testset, batch_size=256, shuffle=False, num_workers=2)
+    mnist_anomaly_scores_seq = []
+    with torch.no_grad():
+        first=True
+        for images, _ in tqdm(testloader, desc=testset.__class__.__name__):
+            images = images.to(device)
+            z_out_real = E(images)
+            images_reconst = G(z_out_real)
+            if first:
+                save_image(images[:64], f"graphs/original_mnist.png", pad_value=1, value_range=(-1, 1), padding=1)
+                save_image(images_reconst[:64], f"graphs/reconst_mnist.png",  pad_value=1, value_range=(-1, 1), padding=1)
+                first = False
+            a_scores = anomaly_score(images, images_reconst, z_out_real, D, args.Lambda)
+            mnist_anomaly_scores_seq += a_scores.tolist()
+
     fashionset = FashionMNIST('./data', train=False, download=True, transform=data_transform)
     kset = KMNIST('./data', train=False, download=True, transform=data_transform)
     noisyset = NoisyMNIST('./data', train=False, download=True, transform=data_transform)
     occludedset = OccludedMNIST('./data', train=False, download=True, transform=data_transform)
 
-    plot_roc_curve(fashionset, "fashion.png", E, G, args.Lambda)
-    plot_roc_curve(kset, "kuzushiji.png", E, G, args.Lambda)
-    plot_roc_curve(noisyset, "noisy.png", E, G, args.Lambda)
-    plot_roc_curve(occludedset, "occluded.png", E, G, args.Lambda)
+    plot_roc_curve(fashionset, "fashion.png", mnist_anomaly_scores_seq, E, G, args.Lambda)
+    plot_roc_curve(kset, "kuzushiji.png", mnist_anomaly_scores_seq, E, G, args.Lambda)
+    plot_roc_curve(noisyset, "noisy.png", mnist_anomaly_scores_seq, E, G, args.Lambda)
+    plot_roc_curve(occludedset, "occluded.png", mnist_anomaly_scores_seq, E, G, args.Lambda)
