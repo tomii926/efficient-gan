@@ -12,23 +12,18 @@ class Generator(nn.Module):
             nn.ReLU(inplace=True),
         )
         self.decoder2 = nn.Sequential(
-            nn.Linear(1024, 256 * 7 * 7, bias=False),
-            nn.BatchNorm1d(256 * 7 * 7),
+            nn.Linear(1024, 128 * 7 * 7, bias=False),
+            nn.BatchNorm1d(128 * 7 * 7),
             nn.ReLU(inplace=True),
         )
         self.convTrans2 = nn.Sequential(
-            nn.ConvTranspose2d(256, 128, 3, stride=1, bias=False),  # b, 128, 9, 9
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-        )
-        self.convTrans3 = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, 3, stride=2, padding = 2, bias=False),  # b, 64, 15, 15
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=False),  # b, 64, 14, 14
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
         )
-        self.convTrans4 = nn.Sequential(
-            nn.ConvTranspose2d(64, 1, 4, stride=2, padding = 2),  # b, 3, 28, 28
-            nn.Tanh(),
+        self.convTrans3 = nn.Sequential(
+            nn.ConvTranspose2d(64, 1, 4, stride=2, padding = 1, bias=False),  # b, 1, 28, 28
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, z):
@@ -38,7 +33,6 @@ class Generator(nn.Module):
         #out = self.convTrans1(out)
         out = self.convTrans2(out)
         out = self.convTrans3(out)
-        out = self.convTrans4(out)
         return out
 
 
