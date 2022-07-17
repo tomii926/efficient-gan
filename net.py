@@ -40,18 +40,14 @@ class Discriminator(nn.Module):
     def __init__(self, z_dim=20):
         super().__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 32, 3, stride=1, padding=1, bias=False),  # b, 64, 28, 28
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(inplace=True),            
-            nn.MaxPool2d(2)  # b, 32, 14, 14
+            nn.Conv2d(1, 64, 4, stride=2, padding=1),  # b, 64, 14, 14
+            nn.LeakyReLU(0.1, inplace=True),
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(32, 64, 3, stride=1, padding=1, bias=False),  # b, 64, 14, 14
+            nn.Conv2d(64, 64, 4, stride=2, padding=1, bias=False),  # b, 64, 7, 7
             nn.BatchNorm2d(64),
-            nn.LeakyReLU(inplace=True),           
-            nn.MaxPool2d(2)  # b, 64, 7, 7
+            nn.LeakyReLU(0.1, inplace=True),
         )
-
         # z input
         self.z_layer1 = nn.Linear(z_dim, 512)  # b, z_dim ==> b, 512
 
