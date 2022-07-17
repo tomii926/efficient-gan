@@ -81,36 +81,26 @@ class Encoder(nn.Module):
     def __init__(self, z_dim=20):
         super().__init__()
         self.conv1 = nn.Sequential(
-            nn.Conv2d(1, 64, 3, stride=1, padding=1, bias=False),  # b, 64, 28, 28
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(inplace=True),            
-            nn.MaxPool2d(2)  # b, 64, 14, 14
+            nn.Conv2d(1, 32, 3, stride=1, bias=False),  # b, 32, 26, 26
+            nn.LeakyReLU(0.1, inplace=True),
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(64, 128, 3, stride=1, padding=1, bias=False),  # b, 128, 14, 14
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(inplace=True),           
-            nn.MaxPool2d(2)  # b, 128, 7, 7
+            nn.Conv2d(32, 64, 3, stride=2, padding=1, bias=False),  # b, 64, 13, 13
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(0.1, inplace=True),       
         )
         self.conv3 = nn.Sequential(
-            nn.Conv2d(128, 256, 3, stride=1, padding=1, bias=False),  # b, 256, 7, 7
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(inplace=True),
-            nn.MaxPool2d(2),  # b, 256, 3, 3
+            nn.Conv2d(64, 128, 3, stride=2, padding=1, bias=False),  # b, 128, 7, 7
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.1, inplace=True),
         )
-        self.conv4 = nn.Sequential(
-            nn.Conv2d(256, 512, 3, stride=1, padding=0, bias=False),  # b, 512, 1, 1
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(inplace=True),
-        )
-        self.z = nn.Linear(512, z_dim)  # b, 512 ==> b, latent_dim
+        self.z = nn.Linear(128 * 7 * 7, z_dim)  # b, 512 ==> b, latent_dim
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
-        x = self.conv4(x)
-        x = x.view(-1,512)
+        x = x.view(-1, 128 * 7 * 7)
         z = self.z(x)
         return z
 
