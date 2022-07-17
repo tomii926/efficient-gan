@@ -22,14 +22,14 @@ class Generator(nn.Module):
             nn.ReLU(inplace=True),
         )
         self.convTrans3 = nn.Sequential(
-            nn.ConvTranspose2d(64, 1, 4, stride=2, padding = 1, bias=False),  # b, 1, 28, 28
-            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(64, 1, 4, stride=2, padding = 1),  # b, 1, 28, 28
+            nn.Tanh()
         )
 
     def forward(self, z):
         out = self.decoder(z)
         out = self.decoder2(out)
-        out = out.view(-1,256,7,7)
+        out = out.view(-1,128,7,7)
         #out = self.convTrans1(out)
         out = self.convTrans2(out)
         out = self.convTrans3(out)
