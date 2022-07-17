@@ -45,8 +45,8 @@ E.apply(weights_init)
 D.apply(weights_init)
     
 
-lr_ge = 0.0001
-lr_d = 0.0001/4
+lr_ge = 0.0002
+lr_d = 0.00005
 beta1, beta2 = 0.5, 0.999
 g_optimizer = torch.optim.Adam(G.parameters(), lr_ge, [beta1, beta2])
 e_optimizer = torch.optim.Adam(E.parameters(), lr_ge, [beta1, beta2])
